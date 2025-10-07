@@ -448,8 +448,12 @@
                     <div>• Hold Ctrl to rotate around player</div>
                     <div>• Edit code to update visual</div>
                     <label>
-                        <input type="checkbox" id="showAoeRange">
-                        <span id="aoeRangeLabel"></span>
+                        <input type="checkbox" id="showInTheAreaRange">
+                        <span id="inTheAreaRangeLabel"></span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="showNearbyRange">
+                        <span id="nearbyRangeLabel"></span>
                     </label>
                     <label>
                         <input type="checkbox" id="showAdjacentRange">
@@ -532,15 +536,18 @@
         // Range constants - edit these values to change ranges and labels
         const DANGER_ZONE_RANGE = 1020;
         const DANGER_ZONE_LABEL = 'Earshot / Danger Zone';
-        const AOE_RANGE = 250;
-        const AOE_RANGE_LABEL = 'Nearby / AoE range';
+        const IN_THE_AREA_RANGE = 322;
+        const IN_THE_AREA_LABEL = 'In the area';
+        const NEARBY_RANGE = 252;
+        const NEARBY_LABEL = 'Nearby (most AoE effects)';
         const ADJACENT_RANGE = 166;
         const ADJACENT_RANGE_LABEL = 'Adjacent range';
 
         let heroes = [];
         let draggingHero = null;
-        let showAoeRange = false;
         let showAdjacentRange = false;
+        let showNearbyRange = false;
+        let showInTheAreaRange = false;
         let selectedHeroes = [];
         let dragStartPos = null;
         let isShiftDragging = false;
@@ -747,22 +754,44 @@ hero = ${hero.hero}`;
             ctx.textAlign = 'center';
             ctx.fillText(`${DANGER_ZONE_LABEL} (${DANGER_ZONE_RANGE})`, CENTER_X, CENTER_Y - DANGER_ZONE_RANGE * SCALE - 8);
 
-            // Draw AoE range circles if enabled
-            if (showAoeRange) {
-                ctx.strokeStyle = '#ffa50088'; // Orange/yellow
+            // Draw In the area range circles if enabled
+            if (showInTheAreaRange) {
+                ctx.strokeStyle = '#00ffff88'; // Cyan
                 ctx.lineWidth = 1;
                 ctx.setLineDash([3, 3]);
                 
-                // Player AoE circle
+                // Player In the area circle
                 ctx.beginPath();
-                ctx.arc(CENTER_X, CENTER_Y, AOE_RANGE * SCALE, 0, Math.PI * 2);
+                ctx.arc(CENTER_X, CENTER_Y, IN_THE_AREA_RANGE * SCALE, 0, Math.PI * 2);
                 ctx.stroke();
                 
-                // Hero AoE circles
+                // Hero In the area circles
                 heroes.forEach(hero => {
                     const pos = polarToCartesian(hero.degree, hero.distance);
                     ctx.beginPath();
-                    ctx.arc(pos.x, pos.y, AOE_RANGE * SCALE, 0, Math.PI * 2);
+                    ctx.arc(pos.x, pos.y, IN_THE_AREA_RANGE * SCALE, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                
+                ctx.setLineDash([]);
+            }
+
+            // Draw Nearby range circles if enabled
+            if (showNearbyRange) {
+                ctx.strokeStyle = '#00ff8888'; // Light green
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                
+                // Player Nearby circle
+                ctx.beginPath();
+                ctx.arc(CENTER_X, CENTER_Y, NEARBY_RANGE * SCALE, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Hero Nearby circles
+                heroes.forEach(hero => {
+                    const pos = polarToCartesian(hero.degree, hero.distance);
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, NEARBY_RANGE * SCALE, 0, Math.PI * 2);
                     ctx.stroke();
                 });
                 
@@ -1218,8 +1247,9 @@ hero = ${hero.hero}`;
         // Controls panel toggle functionality
         const settingsButton = document.getElementById('settingsButton');
         const controlsPanel = document.getElementById('controlsPanel');
-        const showAoeRangeCheckbox = document.getElementById('showAoeRange');
         const showAdjacentRangeCheckbox = document.getElementById('showAdjacentRange');
+        const showNearbyRangeCheckbox = document.getElementById('showNearbyRange');
+        const showInTheAreaRangeCheckbox = document.getElementById('showInTheAreaRange');
         
         // Load controls state from localStorage
         function loadControlsState() {
@@ -1231,22 +1261,28 @@ hero = ${hero.hero}`;
                 controlsPanel.classList.add('hidden');
             }
             
-            // Load AoE range checkbox state
-            const aoeRangeVisible = localStorage.getItem('heroPositionAoeRangeVisible');
-            showAoeRange = aoeRangeVisible === 'true';
-            showAoeRangeCheckbox.checked = showAoeRange;
-            
             // Load Adjacent range checkbox state
             const adjacentRangeVisible = localStorage.getItem('heroPositionAdjacentRangeVisible');
             showAdjacentRange = adjacentRangeVisible === 'true';
             showAdjacentRangeCheckbox.checked = showAdjacentRange;
+            
+            // Load Nearby range checkbox state
+            const nearbyRangeVisible = localStorage.getItem('heroPositionNearbyRangeVisible');
+            showNearbyRange = nearbyRangeVisible === 'true';
+            showNearbyRangeCheckbox.checked = showNearbyRange;
+            
+            // Load In the area range checkbox state
+            const inTheAreaRangeVisible = localStorage.getItem('heroPositionInTheAreaRangeVisible');
+            showInTheAreaRange = inTheAreaRangeVisible === 'true';
+            showInTheAreaRangeCheckbox.checked = showInTheAreaRange;
         }
         
         // Save controls state to localStorage
         function saveControlsState() {
             localStorage.setItem('heroPositionControlsVisible', controlsPanel.classList.contains('hidden') ? 'false' : 'true');
-            localStorage.setItem('heroPositionAoeRangeVisible', showAoeRange.toString());
             localStorage.setItem('heroPositionAdjacentRangeVisible', showAdjacentRange.toString());
+            localStorage.setItem('heroPositionNearbyRangeVisible', showNearbyRange.toString());
+            localStorage.setItem('heroPositionInTheAreaRangeVisible', showInTheAreaRange.toString());
         }
         
         // Toggle controls panel visibility
@@ -1255,16 +1291,23 @@ hero = ${hero.hero}`;
             saveControlsState();
         });
         
-        // Update AoE range visibility and save state
-        showAoeRangeCheckbox.addEventListener('change', (e) => {
-            showAoeRange = e.target.checked;
+        // Update Adjacent range visibility and save state
+        showAdjacentRangeCheckbox.addEventListener('change', (e) => {
+            showAdjacentRange = e.target.checked;
             drawCanvas();
             saveControlsState();
         });
         
-        // Update Adjacent range visibility and save state
-        showAdjacentRangeCheckbox.addEventListener('change', (e) => {
-            showAdjacentRange = e.target.checked;
+        // Update Nearby range visibility and save state
+        showNearbyRangeCheckbox.addEventListener('change', (e) => {
+            showNearbyRange = e.target.checked;
+            drawCanvas();
+            saveControlsState();
+        });
+        
+        // Update In the area range visibility and save state
+        showInTheAreaRangeCheckbox.addEventListener('change', (e) => {
+            showInTheAreaRange = e.target.checked;
             drawCanvas();
             saveControlsState();
         });
@@ -1284,7 +1327,8 @@ hero = ${hero.hero}`;
         });
         
         // Update dynamic labels
-        document.getElementById('aoeRangeLabel').textContent = `${AOE_RANGE_LABEL} (${AOE_RANGE})`;
+        document.getElementById('inTheAreaRangeLabel').textContent = `${IN_THE_AREA_LABEL} (${IN_THE_AREA_RANGE})`;
+        document.getElementById('nearbyRangeLabel').textContent = `${NEARBY_LABEL} (${NEARBY_RANGE})`;
         document.getElementById('adjacentRangeLabel').textContent = `${ADJACENT_RANGE_LABEL} (${ADJACENT_RANGE})`;
         
         // Load controls state
