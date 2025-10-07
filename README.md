@@ -12,6 +12,6 @@ A web-based visual editor for creating and managing hero flagging formations for
 
 ## Usage
 
-1. Open `gwtoolbox-flagging-editor.html` in your browser.
+1. Open https://le-vagabond-gh.github.io/GWToolbox-Flagging-Formation-Editor/ or the `gwtoolbox-flagging-editor.html` file in your browser.
 2. Arrange heroes and copy the generated code.
 3. Paste the code into your `GWToolbox.ini` file.
