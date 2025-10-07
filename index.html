@@ -321,14 +321,19 @@
 
         .canvas-container {
             position: relative;
-            width: 900px;
-            height: 900px;
+            width: min(900px, calc(100vh - 40px));
+            height: min(900px, calc(100vh - 40px));
+            max-width: 100%;
+            max-height: 100%;
         }
 
         canvas {
             border: 1px solid #404040;
             background: #0d0d0d;
             border-radius: 8px;
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         .hero-dot {
@@ -431,7 +436,7 @@
         </div>
         <div class="visual-panel">
             <div class="canvas-container">
-                <canvas id="canvas" width="900" height="900"></canvas>
+                <canvas id="canvas"></canvas>
                 <div id="heroContainer"></div>
                 <div class="icon-button help-button" id="helpButton">?</div>
                 <div class="icon-button settings-button" id="settingsButton">⚙️</div>
@@ -445,6 +450,10 @@
                     <label>
                         <input type="checkbox" id="showAoeRange">
                         <span id="aoeRangeLabel"></span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="showAdjacentRange">
+                        <span id="adjacentRangeLabel"></span>
                     </label>
                 </div>
             </div>
@@ -498,19 +507,40 @@
         const codeEditor = document.getElementById('codeEditor');
         const heroContainer = document.getElementById('heroContainer');
 
-        const CENTER_X = 450;
-        const CENTER_Y = 450;
-        const SCALE = 0.35; // Scale to fit 1200 units at edge
+        let CENTER_X = 450;
+        let CENTER_Y = 450;
+        let SCALE = 0.35; // Scale to fit 1200 units at edge
+        let canvasSize = 900;
+        
+        // Function to update canvas dimensions based on container size
+        function updateCanvasDimensions() {
+            const container = document.querySelector('.canvas-container');
+            const rect = container.getBoundingClientRect();
+            const size = Math.min(rect.width, rect.height);
+            
+            canvasSize = size;
+            canvas.width = size;
+            canvas.height = size;
+            CENTER_X = size / 2;
+            CENTER_Y = size / 2;
+            SCALE = (size / 2) / 1200 * 0.84; // Scale to fit 1200 units at edge with some padding
+            
+            drawCanvas();
+            updateHeroDots();
+        }
         
         // Range constants - edit these values to change ranges and labels
         const DANGER_ZONE_RANGE = 1020;
         const DANGER_ZONE_LABEL = 'Earshot / Danger Zone';
         const AOE_RANGE = 250;
         const AOE_RANGE_LABEL = 'Nearby / AoE range';
+        const ADJACENT_RANGE = 166;
+        const ADJACENT_RANGE_LABEL = 'Adjacent range';
 
         let heroes = [];
         let draggingHero = null;
         let showAoeRange = false;
+        let showAdjacentRange = false;
         let selectedHeroes = [];
         let dragStartPos = null;
         let isShiftDragging = false;
@@ -662,14 +692,15 @@ hero = ${hero.hero}`;
             // Draw grid
             ctx.strokeStyle = '#2a2a2a';
             ctx.lineWidth = 1;
-            for (let i = 0; i <= 900; i += 75) {
+            const gridSpacing = canvasSize / 12; // Keep 12 grid divisions
+            for (let i = 0; i <= canvasSize; i += gridSpacing) {
                 ctx.beginPath();
                 ctx.moveTo(i, 0);
-                ctx.lineTo(i, 900);
+                ctx.lineTo(i, canvasSize);
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.moveTo(0, i);
-                ctx.lineTo(900, i);
+                ctx.lineTo(canvasSize, i);
                 ctx.stroke();
             }
 
@@ -732,6 +763,28 @@ hero = ${hero.hero}`;
                     const pos = polarToCartesian(hero.degree, hero.distance);
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, AOE_RANGE * SCALE, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                
+                ctx.setLineDash([]);
+            }
+
+            // Draw Adjacent range circles if enabled
+            if (showAdjacentRange) {
+                ctx.strokeStyle = '#ffff0088'; // Yellow
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                
+                // Player Adjacent circle
+                ctx.beginPath();
+                ctx.arc(CENTER_X, CENTER_Y, ADJACENT_RANGE * SCALE, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Hero Adjacent circles
+                heroes.forEach(hero => {
+                    const pos = polarToCartesian(hero.degree, hero.distance);
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, ADJACENT_RANGE * SCALE, 0, Math.PI * 2);
                     ctx.stroke();
                 });
                 
@@ -1166,6 +1219,7 @@ hero = ${hero.hero}`;
         const settingsButton = document.getElementById('settingsButton');
         const controlsPanel = document.getElementById('controlsPanel');
         const showAoeRangeCheckbox = document.getElementById('showAoeRange');
+        const showAdjacentRangeCheckbox = document.getElementById('showAdjacentRange');
         
         // Load controls state from localStorage
         function loadControlsState() {
@@ -1181,12 +1235,18 @@ hero = ${hero.hero}`;
             const aoeRangeVisible = localStorage.getItem('heroPositionAoeRangeVisible');
             showAoeRange = aoeRangeVisible === 'true';
             showAoeRangeCheckbox.checked = showAoeRange;
+            
+            // Load Adjacent range checkbox state
+            const adjacentRangeVisible = localStorage.getItem('heroPositionAdjacentRangeVisible');
+            showAdjacentRange = adjacentRangeVisible === 'true';
+            showAdjacentRangeCheckbox.checked = showAdjacentRange;
         }
         
         // Save controls state to localStorage
         function saveControlsState() {
             localStorage.setItem('heroPositionControlsVisible', controlsPanel.classList.contains('hidden') ? 'false' : 'true');
             localStorage.setItem('heroPositionAoeRangeVisible', showAoeRange.toString());
+            localStorage.setItem('heroPositionAdjacentRangeVisible', showAdjacentRange.toString());
         }
         
         // Toggle controls panel visibility
@@ -1198,6 +1258,13 @@ hero = ${hero.hero}`;
         // Update AoE range visibility and save state
         showAoeRangeCheckbox.addEventListener('change', (e) => {
             showAoeRange = e.target.checked;
+            drawCanvas();
+            saveControlsState();
+        });
+        
+        // Update Adjacent range visibility and save state
+        showAdjacentRangeCheckbox.addEventListener('change', (e) => {
+            showAdjacentRange = e.target.checked;
             drawCanvas();
             saveControlsState();
         });
@@ -1218,11 +1285,19 @@ hero = ${hero.hero}`;
         
         // Update dynamic labels
         document.getElementById('aoeRangeLabel').textContent = `${AOE_RANGE_LABEL} (${AOE_RANGE})`;
+        document.getElementById('adjacentRangeLabel').textContent = `${ADJACENT_RANGE_LABEL} (${ADJACENT_RANGE})`;
         
         // Load controls state
         loadControlsState();
         
-        // Initial render
+        // Set up resize observer to handle window resizing
+        const resizeObserver = new ResizeObserver(() => {
+            updateCanvasDimensions();
+        });
+        resizeObserver.observe(document.querySelector('.canvas-container'));
+        
+        // Initial setup
+        updateCanvasDimensions();
         updateFromCode(true);
     </script>
 </body>
