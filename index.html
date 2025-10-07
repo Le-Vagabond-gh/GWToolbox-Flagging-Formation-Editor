@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GWToolbox Flagging Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .left-container {
+            display: flex;
+        }
+        
+        .right-container {
+            width: 200px;
+            background: #252525;
+            border-left: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-panel {
+            background: #252525;
+            border-right: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+        }
+        
+        .history-panel {
+            width: 150px;
+            background: #252525;
+            border-right: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .formations-section {
+            border-bottom: 1px solid #404040;
+            margin-bottom: 10px;
+        }
+        
+        .formations-title {
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #aaa;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .formation-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        .formation-item:hover {
+            background-color: #333;
+        }
+        
+        .formation-item.user-saved {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .formation-name {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .formation-name[contenteditable="true"] {
+            background: #1e1e1e;
+            border: 1px solid #555;
+            padding: 2px 5px;
+            outline: none;
+        }
+        
+        .delete-formation {
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        .delete-formation:hover {
+            opacity: 1;
+        }
+        
+        .save-button {
+            background: #2c5282;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .save-button:hover {
+            background: #3182ce;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: #2d2d2d;
+            border-bottom: 1px solid #404040;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 16px;
+            max-height: 100%;
+        }
+        
+        #historyList {
+            overflow-y: auto;
+            max-height: calc(100vh - 45px);
+        }
+        
+        .history-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        .history-item:hover {
+            background-color: #333;
+        }
+        
+        .history-item.active {
+            background-color: #2c5282;
+        }
+        
+        .history-timestamp {
+            color: #aaa;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        
+        .history-preview {
+            color: #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            overflow-y: visible;
+        }
+
+        textarea:focus {
+            border-color: #007acc;
+        }
+
+        .visual-panel {
+            flex: 1;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .icon-button {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: rgba(45, 45, 45, 0.7);
+            border: 1px solid #404040;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .help-button {
+            bottom: 20px;
+            right: 20px;
+        }
+        
+        .settings-button {
+            top: 20px;
+            right: 20px;
+        }
+        
+        .icon-button:hover {
+            background: rgba(45, 45, 45, 0.9);
+            color: white;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background: #252525;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .modal-close:hover {
+            color: white;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .modal-section {
+            margin-bottom: 20px;
+        }
+        
+        .modal-section h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+        
+        .modal-section p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .modal-section a {
+            color: #4a9eff;
+            text-decoration: none;
+        }
+        
+        .modal-section a:hover {
+            text-decoration: underline;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 900px;
+            height: 900px;
+        }
+
+        canvas {
+            border: 1px solid #404040;
+            background: #0d0d0d;
+            border-radius: 8px;
+        }
+
+        .hero-dot {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: move;
+            user-select: none;
+            transform: translate(-50%, -50%);
+            transition: box-shadow 0.2s;
+        }
+
+        .hero-dot:hover {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .hero-dot.player {
+            background: #4a9eff;
+            color: white;
+            z-index: 10;
+        }
+
+        .hero-dot.member {
+            color: white;
+        }
+        
+        .hero-dot.selected {
+            box-shadow: 0 0 0 3px #fff, 0 0 10px 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        .hero-dot.member-1 { background: #ff6b6b; }
+        .hero-dot.member-2 { background: #4ecdc4; }
+        .hero-dot.member-3 { background: #ffbe0b; }
+        .hero-dot.member-4 { background: #8338ec; }
+        .hero-dot.member-5 { background: #fb5607; }
+        .hero-dot.member-6 { background: #3a86ff; }
+        .hero-dot.member-7 { background: #06d6a0; }
+
+        .info-panel {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: rgba(45, 45, 45, 0.9);
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            border: 1px solid #404040;
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .info-panel.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .info-panel div {
+            margin: 4px 0;
+        }
+
+        .info-panel label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin: 6px 0;
+        }
+
+        .info-panel input[type="checkbox"] {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-container">
+            <div class="code-panel">
+                <div class="panel-header">
+                    <span>Configuration</span>
+                    <button id="saveFormationBtn" class="save-button">💾 Save</button>
+                </div>
+                <div class="panel-content">
+                <textarea id="codeEditor" spellcheck="false"></textarea>
+                </div>
+            </div>
+            <div class="history-panel">
+                <div class="panel-header">History</div>
+                <div class="panel-content" id="historyList">
+                    <!-- History items will be added here -->
+                </div>
+            </div>
+        </div>
+        <div class="visual-panel">
+            <div class="canvas-container">
+                <canvas id="canvas" width="900" height="900"></canvas>
+                <div id="heroContainer"></div>
+                <div class="icon-button help-button" id="helpButton">?</div>
+                <div class="icon-button settings-button" id="settingsButton">⚙️</div>
+                <div class="info-panel" id="controlsPanel">
+                    <div><strong>Controls:</strong></div>
+                    <div>• Drag dots to reposition</div>
+                    <div>• Shift+click to select multiple</div>
+                    <div>• Hold Shift while dragging to constrain</div>
+                    <div>• Hold Ctrl to rotate around player</div>
+                    <div>• Edit code to update visual</div>
+                    <label>
+                        <input type="checkbox" id="showAoeRange">
+                        <span id="aoeRangeLabel"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="right-container">
+            <div class="formations-section">
+                <div class="formations-title">Pre-bundled Formations</div>
+                <div id="prebundledFormations">
+                    <!-- Pre-bundled formations will be added here -->
+                </div>
+            </div>
+            <div class="formations-section">
+                <div class="formations-title">💾 Saved Formations</div>
+                <div id="savedFormations">
+                    <!-- User saved formations will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-close" id="closeModal">&times;</div>
+            
+            <div class="modal-section">
+                <h3>About GWToolbox++</h3>
+                <p>This tool is designed to work with GWToolbox++, a powerful enhancement for Guild Wars.</p>
+                <p>For more information and to download GWToolbox++, visit: <a href="https://www.gwtoolbox.com/" target="_blank">https://www.gwtoolbox.com/</a></p>
+            </div>
+            
+            <div class="modal-section">
+                <h3>Hero Formations Guide</h3>
+                <p>For detailed information on hero formations and flagging techniques, check out:</p>
+                <p><a href="https://gwpvx.fandom.com/wiki/User:Yung_Rocks/Sandbox/Formations" target="_blank">https://gwpvx.fandom.com/wiki/User:Yung_Rocks/Sandbox/Formations</a></p>
+            </div>
+            
+            <div class="modal-section">
+                <h3>Using Your Formations</h3>
+                <p>To use these formations in Guild Wars:</p>
+                <p>1. Copy the formation code from this editor</p>
+                <p>2. Paste it into your GWToolbox.ini file located at:</p>
+                <p><code>%USERPROFILE%\Documents\GWToolbox\%COMPUTERNAME%\GWToolbox.ini</code></p>
+                <p>3. Restart Guild Wars or reload your settings in GWToolbox++</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const codeEditor = document.getElementById('codeEditor');
+        const heroContainer = document.getElementById('heroContainer');
+
+        const CENTER_X = 450;
+        const CENTER_Y = 450;
+        const SCALE = 0.35; // Scale to fit 1200 units at edge
+        
+        // Range constants - edit these values to change ranges and labels
+        const DANGER_ZONE_RANGE = 1020;
+        const DANGER_ZONE_LABEL = 'Earshot / Danger Zone';
+        const AOE_RANGE = 250;
+        const AOE_RANGE_LABEL = 'Nearby / AoE range';
+
+        let heroes = [];
+        let draggingHero = null;
+        let showAoeRange = false;
+        let selectedHeroes = [];
+        let dragStartPos = null;
+        let isShiftDragging = false;
+        let isCtrlDragging = false;
+        
+        // History management
+        let history = [];
+        let currentHistoryIndex = -1;
+        const MAX_HISTORY = 20;
+        let historyCounter = 0;
+        
+        // Formations management
+        let savedFormations = [];
+        let savedFormationCounter = 0;
+        
+        // Pre-bundled formations
+        const preBundledFormations = [
+            {
+                name: "Narrow 0-5-2 Formation",
+                code: `[hotkey-000:FlagHero]
+degree = 270.000000
+distance = 253.000000
+hero = 1
+
+[hotkey-001:FlagHero]
+degree = 223.860000
+distance = 227.550000
+hero = 2
+
+[hotkey-002:FlagHero]
+degree = 180.000000
+distance = 219.100000
+hero = 3
+
+[hotkey-003:FlagHero]
+degree = 136.140000
+distance = 227.550000
+hero = 4
+
+[hotkey-004:FlagHero]
+degree = 90.000000
+distance = 253.000000
+hero = 5
+
+[hotkey-005:FlagHero]
+degree = 200.690000
+distance = 445.830000
+hero = 6
+
+[hotkey-006:FlagHero]
+degree = 159.310000
+distance = 445.830000
+hero = 7`
+            },
+            {
+                name: "Wide 0-5-2 Formation",
+                code: `[hotkey-000:FlagHero]
+degree = 270.000000
+distance = 472.100000
+hero = 1
+
+[hotkey-001:FlagHero]
+degree = 243.430000
+distance = 282.860000
+hero = 2
+
+[hotkey-002:FlagHero]
+degree = 180.000000
+distance = 126.500000
+hero = 3
+
+[hotkey-003:FlagHero]
+degree = 116.570000
+distance = 282.860000
+hero = 4
+
+[hotkey-004:FlagHero]
+degree = 90.000000
+distance = 472.100000
+hero = 5
+
+[hotkey-005:FlagHero]
+degree = 200.100000
+distance = 368.030000
+hero = 6
+
+[hotkey-006:FlagHero]
+degree = 159.900000
+distance = 368.030000
+hero = 7`
+            }
+        ];
+
+        // Parse configuration from code
+        function parseConfig(code) {
+            const heroes = [];
+            const sections = code.split(/\[hotkey-\d+:FlagHero\]/g).filter(s => s.trim());
+            
+            sections.forEach(section => {
+                const degreeMatch = section.match(/degree\s*=\s*([\d.]+)/);
+                const distanceMatch = section.match(/distance\s*=\s*([\d.]+)/);
+                const heroMatch = section.match(/hero\s*=\s*(\d+)/);
+
+                if (degreeMatch && distanceMatch && heroMatch) {
+                    heroes.push({
+                        degree: parseFloat(degreeMatch[1]),
+                        distance: parseFloat(distanceMatch[1]),
+                        hero: parseInt(heroMatch[1])
+                    });
+                }
+            });
+
+            return heroes;
+        }
+
+        // Generate configuration code
+        function generateConfig(heroes) {
+            return heroes.map((hero, index) => {
+                return `[hotkey-${String(index).padStart(3, '0')}:FlagHero]
+degree = ${hero.degree.toFixed(6)}
+distance = ${hero.distance.toFixed(6)}
+hero = ${hero.hero}`;
+            }).join('\n\n');
+        }
+
+        // Convert polar to cartesian coordinates
+        function polarToCartesian(degree, distance) {
+            // Convert degree to radians, adjust for 0° being at top
+            const radians = (degree - 90) * Math.PI / 180;
+            const x = CENTER_X + Math.cos(radians) * distance * SCALE;
+            const y = CENTER_Y + Math.sin(radians) * distance * SCALE;
+            return { x, y };
+        }
+
+        // Convert cartesian to polar coordinates
+        function cartesianToPolar(x, y) {
+            const dx = x - CENTER_X;
+            const dy = y - CENTER_Y;
+            const distance = Math.sqrt(dx * dx + dy * dy) / SCALE;
+            let degree = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            if (degree < 0) degree += 360;
+            return { degree, distance };
+        }
+
+        // Draw the canvas
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = '#2a2a2a';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 900; i += 75) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 900);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(900, i);
+                ctx.stroke();
+            }
+
+            // Draw center crosshair
+            ctx.strokeStyle = '#4a9eff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(CENTER_X - 20, CENTER_Y);
+            ctx.lineTo(CENTER_X + 20, CENTER_Y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(CENTER_X, CENTER_Y - 20);
+            ctx.lineTo(CENTER_X, CENTER_Y + 20);
+            ctx.stroke();
+
+            // Draw direction indicator (0° = front)
+            ctx.strokeStyle = '#4a9eff';
+            ctx.fillStyle = '#4a9eff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(CENTER_X, CENTER_Y - 30);
+            ctx.lineTo(CENTER_X, CENTER_Y - 60);
+            ctx.stroke();
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(CENTER_X, CENTER_Y - 60);
+            ctx.lineTo(CENTER_X - 5, CENTER_Y - 50);
+            ctx.lineTo(CENTER_X + 5, CENTER_Y - 50);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw earshot / danger zone circle
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(CENTER_X, CENTER_Y, DANGER_ZONE_RANGE * SCALE, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Label the circle
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = '12px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${DANGER_ZONE_LABEL} (${DANGER_ZONE_RANGE})`, CENTER_X, CENTER_Y - DANGER_ZONE_RANGE * SCALE - 8);
+
+            // Draw AoE range circles if enabled
+            if (showAoeRange) {
+                ctx.strokeStyle = '#ffa50088'; // Orange/yellow
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                
+                // Player AoE circle
+                ctx.beginPath();
+                ctx.arc(CENTER_X, CENTER_Y, AOE_RANGE * SCALE, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Hero AoE circles
+                heroes.forEach(hero => {
+                    const pos = polarToCartesian(hero.degree, hero.distance);
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, AOE_RANGE * SCALE, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                
+                ctx.setLineDash([]);
+            }
+
+            // Draw lines from player to heroes
+            heroes.forEach(hero => {
+                const pos = polarToCartesian(hero.degree, hero.distance);
+                ctx.strokeStyle = '#ff6b6b44';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(CENTER_X, CENTER_Y);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            });
+        }
+
+        // Update hero dots
+        function updateHeroDots() {
+            heroContainer.innerHTML = '';
+
+            // Player dot
+            const playerDot = document.createElement('div');
+            playerDot.className = 'hero-dot player';
+            playerDot.textContent = 'P';
+            playerDot.style.left = CENTER_X + 'px';
+            playerDot.style.top = CENTER_Y + 'px';
+            heroContainer.appendChild(playerDot);
+
+            // Hero dots
+            heroes.forEach((hero, index) => {
+                const pos = polarToCartesian(hero.degree, hero.distance);
+                const dot = document.createElement('div');
+                dot.className = `hero-dot member member-${hero.hero}`;
+                dot.textContent = hero.hero;
+                dot.style.left = pos.x + 'px';
+                dot.style.top = pos.y + 'px';
+                dot.dataset.index = index;
+
+                // Drag and selection functionality
+                dot.addEventListener('mousedown', (e) => {
+                    // Store the starting position for constraint calculations
+                    const pos = polarToCartesian(hero.degree, hero.distance);
+                    dragStartPos = { x: pos.x, y: pos.y };
+                    
+                    if (e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        // Toggle selection with shift-click
+                        const selectedIndex = selectedHeroes.indexOf(index);
+                        if (selectedIndex === -1) {
+                            selectedHeroes.push(index);
+                            dot.classList.add('selected');
+                        } else {
+                            selectedHeroes.splice(selectedIndex, 1);
+                            dot.classList.remove('selected');
+                        }
+                    } else {
+                        // If not shift-clicking, clear selection and start dragging
+                        if (!selectedHeroes.includes(index)) {
+                            // Clear previous selection if this hero isn't already selected
+                            document.querySelectorAll('.hero-dot.selected').forEach(el => {
+                                el.classList.remove('selected');
+                            });
+                            selectedHeroes = [];
+                        }
+                        
+                        // Start dragging this hero and all selected heroes
+                        draggingHero = index;
+                        if (!selectedHeroes.includes(index)) {
+                            selectedHeroes = [index];
+                            dot.classList.add('selected');
+                        }
+                    }
+                    e.preventDefault();
+                });
+
+                heroContainer.appendChild(dot);
+            });
+        }
+
+        // Update from code
+        function updateFromCode(addToHistory = false) {
+            heroes = parseConfig(codeEditor.value);
+            drawCanvas();
+            updateHeroDots();
+            
+            if (addToHistory) {
+                addHistoryEntry(codeEditor.value);
+            }
+        }
+        
+        // Add entry to history
+        function addHistoryEntry(codeState) {
+            // Don't add if identical to current state
+            if (history.length > 0 && history[currentHistoryIndex].code === codeState) {
+                return;
+            }
+            
+            // Always append to history, never truncate
+            // Increment counter and add new state with metadata
+            historyCounter++;
+            history.push({
+                code: codeState,
+                timestamp: new Date(),
+                stateNumber: historyCounter
+            });
+            
+            // Limit history size (remove oldest)
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+            }
+            
+            // Always point to the latest entry
+            currentHistoryIndex = history.length - 1;
+            updateHistoryUI();
+        }
+        
+        // Go to specific history state
+        function goToHistoryState(index) {
+            if (index >= 0 && index < history.length) {
+                currentHistoryIndex = index;
+                codeEditor.value = history[index].code;
+                updateFromCode(false);
+                updateHistoryUI();
+            }
+        }
+        
+        // Update history UI
+        function updateHistoryUI() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            history.forEach((state, index) => {
+                const item = document.createElement('div');
+                item.className = 'history-item' + (index === currentHistoryIndex ? ' active' : '');
+                
+                const timestamp = document.createElement('div');
+                timestamp.className = 'history-timestamp';
+                timestamp.textContent = state.timestamp.toLocaleTimeString();
+                
+                const preview = document.createElement('div');
+                preview.className = 'history-preview';
+                preview.textContent = `State ${state.stateNumber}`;
+                
+                item.appendChild(timestamp);
+                item.appendChild(preview);
+                
+                item.addEventListener('click', () => goToHistoryState(index));
+                
+                historyList.appendChild(item);
+            });
+            
+            // Scroll to bottom - use setTimeout to ensure DOM has updated
+            setTimeout(() => {
+                historyList.scrollTop = historyList.scrollHeight;
+            }, 0);
+        }
+
+        // Update code from heroes
+        function updateCode() {
+            const cursorPos = codeEditor.selectionStart;
+            codeEditor.value = generateConfig(heroes);
+            codeEditor.setSelectionRange(cursorPos, cursorPos);
+        }
+
+        // Event listeners
+        let codeChangeTimeout;
+        codeEditor.addEventListener('input', () => {
+            updateFromCode(false);
+            
+            // Add to history after a delay to avoid adding every keystroke
+            clearTimeout(codeChangeTimeout);
+            codeChangeTimeout = setTimeout(() => {
+                addHistoryEntry(codeEditor.value);
+            }, 1000);
+        });
+
+        // AoE range checkbox is now handled in the controls state section
+
+        // Clear selection when clicking on the canvas background
+        canvas.addEventListener('mousedown', (e) => {
+            // Only clear if we're clicking on the background (not on a hero dot)
+            // We can determine this by checking if the click event target is the canvas itself
+            if (e.target === canvas) {
+                selectedHeroes = [];
+                document.querySelectorAll('.hero-dot.selected').forEach(dot => {
+                    dot.classList.remove('selected');
+                });
+            }
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (draggingHero !== null) {
+                const rect = canvas.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
+                
+                // Check for modifier keys
+                isShiftDragging = e.shiftKey;
+                isCtrlDragging = e.ctrlKey;
+                if (isShiftDragging && dragStartPos) {
+                    // Calculate which direction has the larger movement
+                    const deltaX = Math.abs(x - dragStartPos.x);
+                    const deltaY = Math.abs(y - dragStartPos.y);
+                    
+                    // Constrain to horizontal or vertical based on larger movement
+                    if (deltaX > deltaY) {
+                        // Horizontal constraint
+                        y = dragStartPos.y;
+                    } else {
+                        // Vertical constraint
+                        x = dragStartPos.x;
+                    }
+                }
+
+                // Get cartesian coordinates for current position
+                const polar = cartesianToPolar(x, y);
+                
+                // For group movement, we need to work in cartesian coordinates
+                const origHero = heroes[draggingHero];
+                const origPos = polarToCartesian(origHero.degree, origHero.distance);
+                
+                // Calculate the delta in cartesian space
+                const deltaX = x - origPos.x;
+                const deltaY = y - origPos.y;
+                
+                // Apply to all selected heroes or just the dragged one
+                if (selectedHeroes.length > 0) {
+                    if (isCtrlDragging) {
+                        // Ctrl is held - rotate around player (original behavior)
+                        const deltaAngle = polar.degree - origHero.degree;
+                        const deltaDistance = polar.distance - origHero.distance;
+                        
+                        selectedHeroes.forEach(idx => {
+                            heroes[idx].degree = (heroes[idx].degree + deltaAngle) % 360;
+                            heroes[idx].distance = Math.max(10, heroes[idx].distance + deltaDistance);
+                        });
+                    } else {
+                        // Normal mode - maintain formation (cartesian movement)
+                        selectedHeroes.forEach(idx => {
+                            // Convert each hero to cartesian, move, then back to polar
+                            const heroPos = polarToCartesian(heroes[idx].degree, heroes[idx].distance);
+                            const newX = heroPos.x + deltaX;
+                            const newY = heroPos.y + deltaY;
+                            
+                            // Convert back to polar coordinates
+                            const newPolar = cartesianToPolar(newX, newY);
+                            heroes[idx].degree = newPolar.degree;
+                            heroes[idx].distance = Math.max(10, newPolar.distance);
+                        });
+                    }
+                } else {
+                    // If no selection, just move the dragged hero
+                    heroes[draggingHero].degree = polar.degree;
+                    heroes[draggingHero].distance = Math.max(10, polar.distance);
+                }
+                
+                updateCode();
+                drawCanvas();
+                updateHeroDots();
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (draggingHero !== null) {
+                // Add to history when drag ends
+                addHistoryEntry(codeEditor.value);
+            }
+            
+            draggingHero = null;
+            dragStartPos = null;
+            isShiftDragging = false;
+            isCtrlDragging = false;
+            
+            // Keep selection active after drag
+            updateHeroDots();
+            selectedHeroes.forEach(index => {
+                const dot = document.querySelector(`.hero-dot[data-index="${index}"]`);
+                if (dot) dot.classList.add('selected');
+            });
+        });
+        
+        // Add keyboard shortcut for undo
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Z for undo
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                if (currentHistoryIndex > 0) {
+                    goToHistoryState(currentHistoryIndex - 1);
+                }
+            }
+        });
+
+        // Load saved formations from localStorage
+        function loadSavedFormations() {
+            const savedFormationsStr = localStorage.getItem('heroPositionSavedFormations');
+            if (savedFormationsStr) {
+                try {
+                    savedFormations = JSON.parse(savedFormationsStr);
+                    // Find the highest counter value
+                    savedFormations.forEach(formation => {
+                        const match = formation.name.match(/Formation (\d+)$/);
+                        if (match && parseInt(match[1]) >= savedFormationCounter) {
+                            savedFormationCounter = parseInt(match[1]) + 1;
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error parsing saved formations:', e);
+                    savedFormations = [];
+                }
+            }
+        }
+        
+        // Save formations to localStorage
+        function saveFormations() {
+            try {
+                localStorage.setItem('heroPositionSavedFormations', JSON.stringify(savedFormations));
+            } catch (e) {
+                console.error('Error saving formations to localStorage:', e);
+                // Show a temporary notification
+                alert('Failed to save formations. Your browser may have localStorage disabled or full.');
+            }
+        }
+        
+        // Render formations
+        function renderFormations() {
+            // Render pre-bundled formations
+            const prebundledContainer = document.getElementById('prebundledFormations');
+            prebundledContainer.innerHTML = '';
+            
+            preBundledFormations.forEach((formation, index) => {
+                const item = document.createElement('div');
+                item.className = 'formation-item';
+                item.textContent = formation.name;
+                item.addEventListener('click', () => loadFormation(formation.code));
+                prebundledContainer.appendChild(item);
+            });
+            
+            // Render saved formations
+            const savedContainer = document.getElementById('savedFormations');
+            savedContainer.innerHTML = '';
+            
+            if (savedFormations.length === 0) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'formation-item';
+                placeholder.textContent = 'No saved formations';
+                placeholder.style.fontStyle = 'italic';
+                placeholder.style.color = '#777';
+                savedContainer.appendChild(placeholder);
+            } else {
+                savedFormations.forEach((formation, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'formation-item user-saved';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'formation-name';
+                    nameSpan.textContent = formation.name;
+                    nameSpan.addEventListener('dblclick', (e) => {
+                        nameSpan.contentEditable = true;
+                        nameSpan.focus();
+                        document.execCommand('selectAll', false, null);
+                    });
+                    
+                    nameSpan.addEventListener('blur', () => {
+                        nameSpan.contentEditable = false;
+                        formation.name = nameSpan.textContent;
+                        saveFormations();
+                    });
+                    
+                    nameSpan.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            nameSpan.blur();
+                        }
+                    });
+                    
+                    const deleteBtn = document.createElement('span');
+                    deleteBtn.className = 'delete-formation';
+                    deleteBtn.innerHTML = '&times;';
+                    deleteBtn.title = 'Delete formation';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        savedFormations.splice(index, 1);
+                        saveFormations();
+                        renderFormations();
+                    });
+                    
+                    item.appendChild(nameSpan);
+                    item.appendChild(deleteBtn);
+                    
+                    item.addEventListener('click', (e) => {
+                        if (e.target !== deleteBtn && nameSpan.contentEditable !== 'true') {
+                            loadFormation(formation.code);
+                        }
+                    });
+                    
+                    savedContainer.appendChild(item);
+                });
+            }
+        }
+        
+        // Load a formation
+        function loadFormation(code) {
+            codeEditor.value = code;
+            updateFromCode(true);
+        }
+        
+        // Save current formation
+        document.getElementById('saveFormationBtn').addEventListener('click', () => {
+            const formationName = `Formation ${savedFormationCounter++}`;
+            savedFormations.push({
+                name: formationName,
+                code: codeEditor.value
+            });
+            saveFormations();
+            renderFormations();
+        });
+        
+        // Initialize formations
+        loadSavedFormations();
+        renderFormations();
+        
+        // Set initial formation from first pre-bundled formation
+        codeEditor.value = preBundledFormations[0].code;
+        
+        // Help modal functionality
+        const helpButton = document.getElementById('helpButton');
+        const helpModal = document.getElementById('helpModal');
+        const closeModal = document.getElementById('closeModal');
+        
+        // Controls panel toggle functionality
+        const settingsButton = document.getElementById('settingsButton');
+        const controlsPanel = document.getElementById('controlsPanel');
+        const showAoeRangeCheckbox = document.getElementById('showAoeRange');
+        
+        // Load controls state from localStorage
+        function loadControlsState() {
+            // Load panel visibility
+            const panelVisible = localStorage.getItem('heroPositionControlsVisible');
+            let controlsPanelVisible = panelVisible === null ? true : panelVisible === 'true';
+            
+            if (!controlsPanelVisible) {
+                controlsPanel.classList.add('hidden');
+            }
+            
+            // Load AoE range checkbox state
+            const aoeRangeVisible = localStorage.getItem('heroPositionAoeRangeVisible');
+            showAoeRange = aoeRangeVisible === 'true';
+            showAoeRangeCheckbox.checked = showAoeRange;
+        }
+        
+        // Save controls state to localStorage
+        function saveControlsState() {
+            localStorage.setItem('heroPositionControlsVisible', controlsPanel.classList.contains('hidden') ? 'false' : 'true');
+            localStorage.setItem('heroPositionAoeRangeVisible', showAoeRange.toString());
+        }
+        
+        // Toggle controls panel visibility
+        settingsButton.addEventListener('click', () => {
+            controlsPanel.classList.toggle('hidden');
+            saveControlsState();
+        });
+        
+        // Update AoE range visibility and save state
+        showAoeRangeCheckbox.addEventListener('change', (e) => {
+            showAoeRange = e.target.checked;
+            drawCanvas();
+            saveControlsState();
+        });
+        
+        helpButton.addEventListener('click', () => {
+            helpModal.classList.add('active');
+        });
+        
+        closeModal.addEventListener('click', () => {
+            helpModal.classList.remove('active');
+        });
+        
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('active');
+            }
+        });
+        
+        // Update dynamic labels
+        document.getElementById('aoeRangeLabel').textContent = `${AOE_RANGE_LABEL} (${AOE_RANGE})`;
+        
+        // Load controls state
+        loadControlsState();
+        
+        // Initial render
+        updateFromCode(true);
+    </script>
+</body>
+</html>
