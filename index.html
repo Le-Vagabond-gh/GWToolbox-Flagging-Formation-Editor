@@ -44,6 +44,37 @@
             width: 300px;
         }
         
+        .hotkey-offset-control {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .hotkey-offset-control label {
+            color: #aaa;
+            white-space: nowrap;
+        }
+        
+        .hotkey-offset-control input {
+            width: 50px;
+            background: #1e1e1e;
+            border: 1px solid #404040;
+            border-radius: 3px;
+            color: #d4d4d4;
+            padding: 4px 6px;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .hotkey-offset-control input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+        
         .history-panel {
             width: 150px;
             background: #252525;
@@ -338,14 +369,14 @@
 
         .hero-dot {
             position: absolute;
-            width: 40px;
-            height: 40px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 12px;
             cursor: move;
             user-select: none;
             transform: translate(-50%, -50%);
@@ -413,6 +444,97 @@
         .info-panel input[type="checkbox"] {
             cursor: pointer;
         }
+        
+        .zoom-control {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(45, 45, 45, 0.9);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            user-select: none;
+        }
+        
+        .zoom-button {
+            width: 24px;
+            height: 24px;
+            background: #2c5282;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .zoom-button:hover {
+            background: #3182ce;
+        }
+        
+        .zoom-button:active {
+            background: #2c5282;
+        }
+        
+        .zoom-level {
+            min-width: 45px;
+            text-align: center;
+            font-weight: 600;
+            color: #ddd;
+        }
+        
+        .zoom-reset {
+            padding: 4px 8px;
+            background: #404040;
+            border: none;
+            border-radius: 3px;
+            color: #ddd;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .zoom-reset:hover {
+            background: #505050;
+        }
+        
+        .canvas-container.panning {
+            cursor: grabbing !important;
+        }
+        
+        .github-link {
+            margin-top: auto;
+            border-top: 1px solid #404040;
+        }
+        
+        .github-link a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .github-link a:hover {
+            color: #fff;
+            background-color: #2a2a2a;
+        }
+        
+        .github-link svg {
+            fill: currentColor;
+        }
     </style>
 </head>
 <body>
@@ -422,6 +544,10 @@
                 <div class="panel-header">
                     <span>Configuration</span>
                     <button id="saveFormationBtn" class="save-button">💾 Save</button>
+                </div>
+                <div class="hotkey-offset-control">
+                    <label for="hotkeyOffset">Start hotkeys at:</label>
+                    <input type="number" id="hotkeyOffset" min="0" max="999" value="0" />
                 </div>
                 <div class="panel-content">
                 <textarea id="codeEditor" spellcheck="false"></textarea>
@@ -440,12 +566,21 @@
                 <div id="heroContainer"></div>
                 <div class="icon-button help-button" id="helpButton">?</div>
                 <div class="icon-button settings-button" id="settingsButton">⚙️</div>
+                <div class="zoom-control">
+                    <button class="zoom-button" id="zoomOut" title="Zoom Out">−</button>
+                    <div class="zoom-level" id="zoomLevel">100%</div>
+                    <button class="zoom-button" id="zoomIn" title="Zoom In">+</button>
+                    <button class="zoom-reset" id="zoomReset" title="Reset Zoom & Pan">Reset</button>
+                </div>
                 <div class="info-panel" id="controlsPanel">
                     <div><strong>Controls:</strong></div>
                     <div>• Drag dots to reposition</div>
                     <div>• Shift+click to select multiple</div>
+                    <div>• Arrow keys to nudge by 1 unit</div>
                     <div>• Hold Shift while dragging to constrain</div>
                     <div>• Hold Ctrl to rotate around player</div>
+                    <div>• Mouse wheel to zoom</div>
+                    <div>• Middle-click drag to pan</div>
                     <div>• Edit code to update visual</div>
                     <label>
                         <input type="checkbox" id="showInTheAreaRange">
@@ -458,6 +593,10 @@
                     <label>
                         <input type="checkbox" id="showAdjacentRange">
                         <span id="adjacentRangeLabel"></span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="highlightIntersections">
+                        <span>Highlight intersections</span>
                     </label>
                 </div>
             </div>
@@ -474,6 +613,14 @@
                 <div id="savedFormations">
                     <!-- User saved formations will be added here -->
                 </div>
+            </div>
+            <div class="github-link">
+                <a href="https://github.com/Le-Vagabond-gh/GWToolbox-Flagging-Formation-Editor" target="_blank" rel="noopener noreferrer">
+                    <svg height="24" aria-hidden="true" viewBox="0 0 24 24" version="1.1" width="24" data-view-component="true">
+                        <path d="M12 1C5.923 1 1 5.923 1 12c0 4.867 3.149 8.979 7.521 10.436.55.096.756-.233.756-.522 0-.262-.013-1.128-.013-2.049-2.764.509-3.479-.674-3.699-1.292-.124-.317-.66-1.293-1.127-1.554-.385-.207-.936-.715-.014-.729.866-.014 1.485.797 1.691 1.128.99 1.663 2.571 1.196 3.204.907.096-.715.385-1.196.701-1.471-2.448-.275-5.005-1.224-5.005-5.432 0-1.196.426-2.186 1.128-2.956-.111-.275-.496-1.402.11-2.915 0 0 .921-.288 3.024 1.128a10.193 10.193 0 0 1 2.75-.371c.936 0 1.871.123 2.75.371 2.104-1.43 3.025-1.128 3.025-1.128.605 1.513.221 2.64.111 2.915.701.77 1.127 1.747 1.127 2.956 0 4.222-2.571 5.157-5.019 5.432.399.344.743 1.004.743 2.035 0 1.471-.014 2.654-.014 3.025 0 .289.206.632.756.522C19.851 20.979 23 16.854 23 12c0-6.077-4.922-11-11-11Z"></path>
+                    </svg>
+                    <span>GitHub</span>
+                </a>
             </div>
         </div>
     </div>
@@ -515,6 +662,12 @@
         let CENTER_Y = 450;
         let SCALE = 0.35; // Scale to fit 1200 units at edge
         let canvasSize = 900;
+        let zoomLevel = 1.0;
+        let panOffsetX = 0;
+        let panOffsetY = 0;
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
         
         // Function to update canvas dimensions based on container size
         function updateCanvasDimensions() {
@@ -525,12 +678,17 @@
             canvasSize = size;
             canvas.width = size;
             canvas.height = size;
-            CENTER_X = size / 2;
-            CENTER_Y = size / 2;
-            SCALE = (size / 2) / 1200 * 0.84; // Scale to fit 1200 units at edge with some padding
+            CENTER_X = size / 2 + panOffsetX;
+            CENTER_Y = size / 2 + panOffsetY;
+            SCALE = (size / 2) / 1200 * 0.84 * zoomLevel; // Scale to fit 1200 units at edge with some padding
             
             drawCanvas();
             updateHeroDots();
+        }
+        
+        // Update zoom level display
+        function updateZoomDisplay() {
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
         }
         
         // Range constants - edit these values to change ranges and labels
@@ -539,19 +697,21 @@
         const IN_THE_AREA_RANGE = 322;
         const IN_THE_AREA_LABEL = 'In the area';
         const NEARBY_RANGE = 252;
-        const NEARBY_LABEL = 'Nearby (most AoE effects)';
+        const NEARBY_LABEL = 'Nearby';
         const ADJACENT_RANGE = 166;
-        const ADJACENT_RANGE_LABEL = 'Adjacent range';
+        const ADJACENT_RANGE_LABEL = 'Adjacent';
 
         let heroes = [];
         let draggingHero = null;
         let showAdjacentRange = false;
         let showNearbyRange = false;
         let showInTheAreaRange = false;
+        let highlightIntersections = false;
         let selectedHeroes = [];
         let dragStartPos = null;
         let isShiftDragging = false;
         let isCtrlDragging = false;
+        let hotkeyOffset = 0;
         
         // History management
         let history = [];
@@ -666,7 +826,8 @@ hero = 7`
         // Generate configuration code
         function generateConfig(heroes) {
             return heroes.map((hero, index) => {
-                return `[hotkey-${String(index).padStart(3, '0')}:FlagHero]
+                const hotkeyNumber = index + hotkeyOffset;
+                return `[hotkey-${String(hotkeyNumber).padStart(3, '0')}:FlagHero]
 degree = ${hero.degree.toFixed(6)}
 distance = ${hero.distance.toFixed(6)}
 hero = ${hero.hero}`;
@@ -691,24 +852,71 @@ hero = ${hero.hero}`;
             if (degree < 0) degree += 360;
             return { degree, distance };
         }
+        
+        // Check if a point is within a circle's range
+        function isPointInRange(pointX, pointY, centerX, centerY, range) {
+            const dx = pointX - centerX;
+            const dy = pointY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance <= range * SCALE;
+        }
+        
+        // Check if a range circle intersects any hero centers (excluding its own center)
+        function checkIntersections(centerX, centerY, range) {
+            const tolerance = 1; // Small tolerance for floating point comparison
+            
+            // Check player center (if not the circle's own center)
+            const distToPlayer = Math.sqrt((CENTER_X - centerX) ** 2 + (CENTER_Y - centerY) ** 2);
+            if (distToPlayer > tolerance && isPointInRange(CENTER_X, CENTER_Y, centerX, centerY, range)) {
+                return true;
+            }
+            
+            // Check all hero centers (excluding the circle's own center)
+            for (const hero of heroes) {
+                const pos = polarToCartesian(hero.degree, hero.distance);
+                const distToHero = Math.sqrt((pos.x - centerX) ** 2 + (pos.y - centerY) ** 2);
+                if (distToHero > tolerance && isPointInRange(pos.x, pos.y, centerX, centerY, range)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
 
         // Draw the canvas
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw grid
+            // Draw grid (100 game units per square)
             ctx.strokeStyle = '#2a2a2a';
             ctx.lineWidth = 1;
-            const gridSpacing = canvasSize / 12; // Keep 12 grid divisions
-            for (let i = 0; i <= canvasSize; i += gridSpacing) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvasSize);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(canvasSize, i);
-                ctx.stroke();
+            const gridSpacing = 100 * SCALE; // 100 game units
+            
+            // Calculate grid range based on visible area
+            const maxDistance = Math.max(canvasSize / SCALE, 2400); // At least cover danger zone
+            const gridStart = -Math.ceil(maxDistance / 100) * 100;
+            const gridEnd = Math.ceil(maxDistance / 100) * 100;
+            
+            // Draw vertical lines
+            for (let x = gridStart; x <= gridEnd; x += 100) {
+                const screenX = CENTER_X + x * SCALE;
+                if (screenX >= 0 && screenX <= canvasSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, 0);
+                    ctx.lineTo(screenX, canvasSize);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw horizontal lines
+            for (let y = gridStart; y <= gridEnd; y += 100) {
+                const screenY = CENTER_Y + y * SCALE;
+                if (screenY >= 0 && screenY <= canvasSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, screenY);
+                    ctx.lineTo(canvasSize, screenY);
+                    ctx.stroke();
+                }
             }
 
             // Draw center crosshair
@@ -756,11 +964,12 @@ hero = ${hero.hero}`;
 
             // Draw In the area range circles if enabled
             if (showInTheAreaRange) {
-                ctx.strokeStyle = '#00ffff88'; // Cyan
                 ctx.lineWidth = 1;
                 ctx.setLineDash([3, 3]);
                 
                 // Player In the area circle
+                const playerIntersects = highlightIntersections && checkIntersections(CENTER_X, CENTER_Y, IN_THE_AREA_RANGE);
+                ctx.strokeStyle = playerIntersects ? '#ff000088' : '#00ffff88';
                 ctx.beginPath();
                 ctx.arc(CENTER_X, CENTER_Y, IN_THE_AREA_RANGE * SCALE, 0, Math.PI * 2);
                 ctx.stroke();
@@ -768,6 +977,8 @@ hero = ${hero.hero}`;
                 // Hero In the area circles
                 heroes.forEach(hero => {
                     const pos = polarToCartesian(hero.degree, hero.distance);
+                    const heroIntersects = highlightIntersections && checkIntersections(pos.x, pos.y, IN_THE_AREA_RANGE);
+                    ctx.strokeStyle = heroIntersects ? '#ff000088' : '#00ffff88';
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, IN_THE_AREA_RANGE * SCALE, 0, Math.PI * 2);
                     ctx.stroke();
@@ -778,11 +989,12 @@ hero = ${hero.hero}`;
 
             // Draw Nearby range circles if enabled
             if (showNearbyRange) {
-                ctx.strokeStyle = '#00ff8888'; // Light green
                 ctx.lineWidth = 1;
                 ctx.setLineDash([3, 3]);
                 
                 // Player Nearby circle
+                const playerNearbyIntersects = highlightIntersections && checkIntersections(CENTER_X, CENTER_Y, NEARBY_RANGE);
+                ctx.strokeStyle = playerNearbyIntersects ? '#ff000088' : '#00ff8888';
                 ctx.beginPath();
                 ctx.arc(CENTER_X, CENTER_Y, NEARBY_RANGE * SCALE, 0, Math.PI * 2);
                 ctx.stroke();
@@ -790,6 +1002,8 @@ hero = ${hero.hero}`;
                 // Hero Nearby circles
                 heroes.forEach(hero => {
                     const pos = polarToCartesian(hero.degree, hero.distance);
+                    const heroNearbyIntersects = highlightIntersections && checkIntersections(pos.x, pos.y, NEARBY_RANGE);
+                    ctx.strokeStyle = heroNearbyIntersects ? '#ff000088' : '#00ff8888';
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, NEARBY_RANGE * SCALE, 0, Math.PI * 2);
                     ctx.stroke();
@@ -800,11 +1014,12 @@ hero = ${hero.hero}`;
 
             // Draw Adjacent range circles if enabled
             if (showAdjacentRange) {
-                ctx.strokeStyle = '#ffff0088'; // Yellow
                 ctx.lineWidth = 1;
                 ctx.setLineDash([3, 3]);
                 
                 // Player Adjacent circle
+                const playerAdjacentIntersects = highlightIntersections && checkIntersections(CENTER_X, CENTER_Y, ADJACENT_RANGE);
+                ctx.strokeStyle = playerAdjacentIntersects ? '#ff000088' : '#ffff0088';
                 ctx.beginPath();
                 ctx.arc(CENTER_X, CENTER_Y, ADJACENT_RANGE * SCALE, 0, Math.PI * 2);
                 ctx.stroke();
@@ -812,6 +1027,8 @@ hero = ${hero.hero}`;
                 // Hero Adjacent circles
                 heroes.forEach(hero => {
                     const pos = polarToCartesian(hero.degree, hero.distance);
+                    const heroAdjacentIntersects = highlightIntersections && checkIntersections(pos.x, pos.y, ADJACENT_RANGE);
+                    ctx.strokeStyle = heroAdjacentIntersects ? '#ff000088' : '#ffff0088';
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, ADJACENT_RANGE * SCALE, 0, Math.PI * 2);
                     ctx.stroke();
@@ -830,6 +1047,12 @@ hero = ${hero.hero}`;
                 ctx.lineTo(pos.x, pos.y);
                 ctx.stroke();
             });
+            
+            // Draw grid legend
+            ctx.fillStyle = '#888';
+            ctx.font = '11px Segoe UI';
+            ctx.textAlign = 'left';
+            ctx.fillText('Grid: 100 units/square', 10, 20);
         }
 
         // Update hero dots
@@ -995,6 +1218,16 @@ hero = ${hero.hero}`;
 
         // Clear selection when clicking on the canvas background
         canvas.addEventListener('mousedown', (e) => {
+            // Middle mouse button for panning
+            if (e.button === 1) {
+                e.preventDefault();
+                isPanning = true;
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                document.querySelector('.canvas-container').classList.add('panning');
+                return;
+            }
+            
             // Only clear if we're clicking on the background (not on a hero dot)
             // We can determine this by checking if the click event target is the canvas itself
             if (e.target === canvas) {
@@ -1005,7 +1238,33 @@ hero = ${hero.hero}`;
             }
         });
         
+        // Mouse wheel zoom
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            const zoomSpeed = 0.1;
+            const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
+            zoomLevel = Math.max(0.5, Math.min(3, zoomLevel + delta));
+            
+            updateCanvasDimensions();
+            updateZoomDisplay();
+        });
+        
         document.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                const deltaX = e.clientX - panStartX;
+                const deltaY = e.clientY - panStartY;
+                
+                panOffsetX += deltaX;
+                panOffsetY += deltaY;
+                
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                
+                updateCanvasDimensions();
+                return;
+            }
+            
             if (draggingHero !== null) {
                 const rect = canvas.getBoundingClientRect();
                 let x = e.clientX - rect.left;
@@ -1077,7 +1336,12 @@ hero = ${hero.hero}`;
             }
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e) => {
+            if (isPanning) {
+                isPanning = false;
+                document.querySelector('.canvas-container').classList.remove('panning');
+            }
+            
             if (draggingHero !== null) {
                 // Add to history when drag ends
                 addHistoryEntry(codeEditor.value);
@@ -1096,7 +1360,7 @@ hero = ${hero.hero}`;
             });
         });
         
-        // Add keyboard shortcut for undo
+        // Add keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             // Ctrl+Z for undo
             if (e.ctrlKey && e.key === 'z') {
@@ -1104,6 +1368,62 @@ hero = ${hero.hero}`;
                 if (currentHistoryIndex > 0) {
                     goToHistoryState(currentHistoryIndex - 1);
                 }
+                return;
+            }
+            
+            // Arrow keys to nudge selected heroes by 1 unit
+            if (selectedHeroes.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                
+                // Determine movement direction in cartesian space (1 unit = 1 game unit)
+                let deltaX = 0;
+                let deltaY = 0;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        deltaY = -1;
+                        break;
+                    case 'ArrowDown':
+                        deltaY = 1;
+                        break;
+                    case 'ArrowLeft':
+                        deltaX = -1;
+                        break;
+                    case 'ArrowRight':
+                        deltaX = 1;
+                        break;
+                }
+                
+                // Move all selected heroes
+                selectedHeroes.forEach(idx => {
+                    // Convert current position to cartesian
+                    const heroPos = polarToCartesian(heroes[idx].degree, heroes[idx].distance);
+                    
+                    // Apply movement in cartesian space
+                    const newX = heroPos.x + deltaX * SCALE;
+                    const newY = heroPos.y + deltaY * SCALE;
+                    
+                    // Convert back to polar coordinates
+                    const newPolar = cartesianToPolar(newX, newY);
+                    heroes[idx].degree = newPolar.degree;
+                    heroes[idx].distance = Math.max(10, newPolar.distance);
+                });
+                
+                updateCode();
+                drawCanvas();
+                updateHeroDots();
+                
+                // Restore selection
+                selectedHeroes.forEach(index => {
+                    const dot = document.querySelector(`.hero-dot[data-index="${index}"]`);
+                    if (dot) dot.classList.add('selected');
+                });
+                
+                // Add to history after a short delay to avoid spamming history
+                clearTimeout(window.arrowKeyHistoryTimeout);
+                window.arrowKeyHistoryTimeout = setTimeout(() => {
+                    addHistoryEntry(codeEditor.value);
+                }, 500);
             }
         });
 
@@ -1250,6 +1570,7 @@ hero = ${hero.hero}`;
         const showAdjacentRangeCheckbox = document.getElementById('showAdjacentRange');
         const showNearbyRangeCheckbox = document.getElementById('showNearbyRange');
         const showInTheAreaRangeCheckbox = document.getElementById('showInTheAreaRange');
+        const highlightIntersectionsCheckbox = document.getElementById('highlightIntersections');
         
         // Load controls state from localStorage
         function loadControlsState() {
@@ -1275,6 +1596,11 @@ hero = ${hero.hero}`;
             const inTheAreaRangeVisible = localStorage.getItem('heroPositionInTheAreaRangeVisible');
             showInTheAreaRange = inTheAreaRangeVisible === 'true';
             showInTheAreaRangeCheckbox.checked = showInTheAreaRange;
+            
+            // Load highlight intersections checkbox state
+            const highlightIntersectionsVisible = localStorage.getItem('heroPositionHighlightIntersections');
+            highlightIntersections = highlightIntersectionsVisible === 'true';
+            highlightIntersectionsCheckbox.checked = highlightIntersections;
         }
         
         // Save controls state to localStorage
@@ -1283,6 +1609,7 @@ hero = ${hero.hero}`;
             localStorage.setItem('heroPositionAdjacentRangeVisible', showAdjacentRange.toString());
             localStorage.setItem('heroPositionNearbyRangeVisible', showNearbyRange.toString());
             localStorage.setItem('heroPositionInTheAreaRangeVisible', showInTheAreaRange.toString());
+            localStorage.setItem('heroPositionHighlightIntersections', highlightIntersections.toString());
         }
         
         // Toggle controls panel visibility
@@ -1312,6 +1639,13 @@ hero = ${hero.hero}`;
             saveControlsState();
         });
         
+        // Update highlight intersections and save state
+        highlightIntersectionsCheckbox.addEventListener('change', (e) => {
+            highlightIntersections = e.target.checked;
+            drawCanvas();
+            saveControlsState();
+        });
+        
         helpButton.addEventListener('click', () => {
             helpModal.classList.add('active');
         });
@@ -1330,6 +1664,46 @@ hero = ${hero.hero}`;
         document.getElementById('inTheAreaRangeLabel').textContent = `${IN_THE_AREA_LABEL} (${IN_THE_AREA_RANGE})`;
         document.getElementById('nearbyRangeLabel').textContent = `${NEARBY_LABEL} (${NEARBY_RANGE})`;
         document.getElementById('adjacentRangeLabel').textContent = `${ADJACENT_RANGE_LABEL} (${ADJACENT_RANGE})`;
+        
+        // Zoom controls
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            zoomLevel = Math.min(3, zoomLevel + 0.2);
+            updateCanvasDimensions();
+            updateZoomDisplay();
+        });
+        
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            zoomLevel = Math.max(0.5, zoomLevel - 0.2);
+            updateCanvasDimensions();
+            updateZoomDisplay();
+        });
+        
+        document.getElementById('zoomReset').addEventListener('click', () => {
+            zoomLevel = 1.0;
+            panOffsetX = 0;
+            panOffsetY = 0;
+            updateCanvasDimensions();
+            updateZoomDisplay();
+        });
+        
+        // Hotkey offset control
+        const hotkeyOffsetInput = document.getElementById('hotkeyOffset');
+        
+        // Load hotkey offset from localStorage
+        const savedOffset = localStorage.getItem('heroPositionHotkeyOffset');
+        if (savedOffset !== null) {
+            hotkeyOffset = parseInt(savedOffset);
+            hotkeyOffsetInput.value = hotkeyOffset;
+        }
+        
+        // Update hotkey offset when changed
+        hotkeyOffsetInput.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value) || 0;
+            hotkeyOffset = Math.max(0, Math.min(999, value));
+            hotkeyOffsetInput.value = hotkeyOffset;
+            localStorage.setItem('heroPositionHotkeyOffset', hotkeyOffset.toString());
+            updateCode();
+        });
         
         // Load controls state
         loadControlsState();
